@@ -1,10 +1,10 @@
 const http = require('http');
 const fs = require('fs');
 const querystring = require('querystring');
-const PORT = process.env.PORT || 3000; //âîçìîæíîñòü çàäàòü ïîðò ÷åðåç ïåðåìåííóþ îêðóæåíèÿ
+const PORT = process.env.PORT || 3000; //возможность задать порт через переменную окружения
 const base = './public';
 
-//Ïðîâåðêà ôàéëà
+//Проверка файла
 function checkFile(filename) {
     return new Promise((resolve, reject) => {
         fs.stat(filename, (err, stat) => {
@@ -22,7 +22,7 @@ function checkFile(filename) {
 }
 
 /*
-Ïðåîáðàçîâàíèå ôàéëîâ
+Преобразование файлов
 */
 function parse(data, type) {
     switch (type) {
@@ -37,16 +37,16 @@ function parse(data, type) {
 }
 
 /*
-Îáðàáîò÷èê ïðèíèìàåò â êà÷åñòâå àðãóìåíòîâ äâà îáúåêòà: çàïðîñ
-( IncomingMessage) è îòâåò ( ServerResponse). 
+Обработчик принимает в качестве аргументов два объекта: запрос
+( IncomingMessage) и ответ ( ServerResponse). 
 */
 
 function handler(req, res) {
     if (req.method === "POST") {
-		/*
-		Çàïðîñ req ÿâëÿåòñÿ ÷èòàåìûì ïîòîêîì è äàííûå îò êëèåíòà ïîñòóïàþò
-		ïîðöèÿìè. ×òåíèå ëàííûõ è îæèäàíèå çàêðûòèÿ ïîòîêà.
-		*/
+	/*
+	Запрос req является читаемым потоком и данные от клиента поступают
+	порциями. Чтение данных и ожидание закрытия потока.
+	*/
         let data = '';
         req.on('data', chunk => data += chunk);
         req.on('end', () => {
@@ -70,11 +70,11 @@ function handler(req, res) {
                 }
             };
 			
-			/*
-			Îáðàáîò÷èê ñîáûòèÿ end
-			*/
-            function clientHandler(response) {
-                let data = '';
+	/*
+	Обработчик события end
+	*/
+        function clientHandler(response) {
+		let data = '';
                 response.on('data', function(chunk) {
                     data += chunk;
                 });
@@ -99,7 +99,7 @@ function handler(req, res) {
             request.end();
         });
     } else {
-		//Îáðàáîò÷èê çàïðîñîâ
+	//Обработчик запросов
         checkFile(base + req.url)
         .then(filename => {
             res.writeHead(200, 'OK', {'Content-Type': 'text/html'});
@@ -113,7 +113,7 @@ function handler(req, res) {
 
 }
 
-//Ñîçäàåì è çàêóñêàåì ñåðâåð
+//Создаем и закускаем сервер
 const server = http.createServer();
 server
 	.listen(PORT)
